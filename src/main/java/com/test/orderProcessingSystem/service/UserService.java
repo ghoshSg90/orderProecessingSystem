@@ -1,5 +1,6 @@
 package com.test.orderProcessingSystem.service;
 
+import com.test.orderProcessingSystem.config.CacheConfig;
 import com.test.orderProcessingSystem.dto.AddressResponse;
 import com.test.orderProcessingSystem.dto.UpdateAddressRequest;
 import com.test.orderProcessingSystem.entity.Address;
@@ -10,6 +11,7 @@ import com.test.orderProcessingSystem.repository.AddressRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
 import com.test.orderProcessingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class UserService {
     private final OrderHistoryRepository orderHistoryRepository;
 
     @Transactional
+    @CacheEvict(value = CacheConfig.USER_DETAILS_CACHE, allEntries = true)
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
