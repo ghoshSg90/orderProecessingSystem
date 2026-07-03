@@ -2,6 +2,8 @@ package com.test.orderProcessingSystem.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 
@@ -21,6 +23,7 @@ public class OrderDetails {
     // Parent Order
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private OrderHistory orderHistory;
 
     // Purchased Product

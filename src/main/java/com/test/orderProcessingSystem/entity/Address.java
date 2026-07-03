@@ -2,11 +2,12 @@ package com.test.orderProcessingSystem.entity;
 
 
 import com.test.orderProcessingSystem.entity.enums.AddressType;
-import com.test.orderProcessingSystem.entity.enums.ProductCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "ADDRESS")
@@ -47,5 +48,6 @@ public class Address {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_address_user")
     )
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }

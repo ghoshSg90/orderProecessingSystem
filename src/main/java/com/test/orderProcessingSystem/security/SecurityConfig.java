@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/auth/**").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("CUSTOMER_SUPPORT_EXECUTIVE")
+                        .requestMatchers("/v1/products/**").hasRole("CUSTOMER")
                         .requestMatchers("/v1/users/**").hasRole("CUSTOMER")
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())

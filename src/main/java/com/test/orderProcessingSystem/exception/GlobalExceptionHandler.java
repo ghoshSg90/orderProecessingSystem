@@ -1,5 +1,6 @@
 package com.test.orderProcessingSystem.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -51,5 +52,15 @@ public class GlobalExceptionHandler {
                 "message", "You do not have permission to access this resource"
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        Map<String, Object> body = Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", HttpStatus.CONFLICT.value(),
+                "message", "Operation could not be completed because the record is referenced by other data"
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 }
