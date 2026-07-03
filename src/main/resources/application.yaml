@@ -1,0 +1,17 @@
+spring:
+  main:
+    banner-mode: "off"
+  application:
+    name: orderProcessingSystem
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderprocessingsystem_db
+    username: adminosp
+    password: password123$
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      #ddl-auto: update
+      ddl-auto: create
+    show-sql: true
