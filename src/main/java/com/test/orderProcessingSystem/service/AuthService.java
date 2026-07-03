@@ -11,12 +11,15 @@ import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.UserRepository;
 import com.test.orderProcessingSystem.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -48,6 +51,7 @@ public class AuthService {
         user.setUserRoleCategory(UserRoleCategory.CUSTOMER);
 
         User saved = userRepository.save(user);
+        log.info("New customer registered userId={} email={}", saved.getUserId(), saved.getEmail());
 
         return RegisterResponse.builder()
                 .userId(saved.getUserId())
@@ -60,13 +64,22 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUserName(), request.getPassword()));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUserName(), request.getPassword()));
+        } catch (AuthenticationException ex) {
+            // WARN: invalid login — log the attempted username (never the password), then rethrow
+            log.warn("Login failed username={} reason={}", request.getUserName(), ex.getMessage());
+            throw ex;
+        }
 
         User user = userRepository.findByUserName(request.getUserName())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserName()));
 
         String token = jwtService.generateToken(user);
+
+        log.info("User login successful username={} role={}",
+                user.getUserName(), user.getUserRoleCategory().name());
 
         return LoginResponse.builder()
                 .token(token)

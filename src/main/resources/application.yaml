@@ -14,7 +14,7 @@ spring:
     hibernate:
       #ddl-auto: update
       ddl-auto: create
-    show-sql: true
+    #show-sql: true
     defer-datasource-initialization: true
 
   sql:
@@ -25,3 +25,14 @@ app:
   jwt:
     secret: 8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM=
     expiration-ms: 3600000
+
+logging:
+  level:
+    root: INFO
+    # Application logs at DEBUG in dev; set to TRACE to see method entry/exit
+    com.test.orderProcessingSystem: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+  pattern:
+    # [%X{requestId}] surfaces the per-request correlation id on every line
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{requestId}] %logger{36} - %msg%n"

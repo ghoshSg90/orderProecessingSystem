@@ -8,6 +8,7 @@ import com.test.orderProcessingSystem.security.SecurityUtils;
 import com.test.orderProcessingSystem.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/users/")
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class OrderController {
             @PathVariable Long userId,
             @PageableDefault(size = 10) Pageable pageable) {
         requireSelf(userId);
+        log.info("Customer fetched own orders userId={}", userId);
         return ResponseEntity.ok(new PagedModel<>(orderService.listOrdersForUser(userId, pageable)));
     }
 

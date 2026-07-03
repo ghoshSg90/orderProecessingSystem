@@ -14,6 +14,7 @@ import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.OrderDetailsRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminOrderService {
@@ -30,6 +32,8 @@ public class AdminOrderService {
 
     @Transactional(readOnly = true)
     public Page<AdminOrderSummaryResponse> listAllOrders(OrderStatus statusFilter, Pageable pageable) {
+        log.debug("Fetching orders (admin) page={} size={} status={}",
+                pageable.getPageNumber(), pageable.getPageSize(), statusFilter);
         Page<OrderHistory> orders = statusFilter == null
                 ? orderHistoryRepository.findAll(pageable)
                 : orderHistoryRepository.findByOrderStatus(statusFilter, pageable);
@@ -39,6 +43,7 @@ public class AdminOrderService {
 
     @Transactional(readOnly = true)
     public AdminOrderDetailResponse getOrder(Long orderId) {
+        log.debug("Fetching order (admin) orderId={}", orderId);
         OrderHistory orderHistory = orderHistoryRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
@@ -47,6 +52,7 @@ public class AdminOrderService {
 
     @Transactional(readOnly = true)
     public OrderDetailLineResponse getOrderDetailLine(Long orderId, Long orderDetailsId) {
+        log.debug("Fetching order detail line orderId={} orderDetailsId={}", orderId, orderDetailsId);
         OrderDetails orderDetails = orderDetailsRepository
                 .findByOrderDetailsIdAndOrderHistory_OrderId(orderDetailsId, orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -60,15 +66,24 @@ public class AdminOrderService {
         OrderHistory orderHistory = orderHistoryRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
+        OrderStatus oldStatus = orderHistory.getOrderStatus();
         orderHistory.setOrderStatus(request.getOrderStatus());
         OrderHistory savedOrder = orderHistoryRepository.save(orderHistory);
+        log.info("Order status updated orderId={} old={} new={}",
+                orderId, oldStatus, savedOrder.getOrderStatus());
         return toAdminOrderDetailResponse(savedOrder);
     }
 
     @Transactional
     public int movePendingOrdersToProcessing() {
         List<OrderHistory> pendingOrders = orderHistoryRepository.findByOrderStatus(OrderStatus.PENDING);
-        pendingOrders.forEach(order -> order.setOrderStatus(OrderStatus.PROCESSING));
+        if (!pendingOrders.isEmpty()) {
+            log.info("Pending orders found count={}", pendingOrders.size());
+        }
+        pendingOrders.forEach(order -> {
+            log.debug("Order moved orderId={} status=PENDING->PROCESSING", order.getOrderId());
+            order.setOrderStatus(OrderStatus.PROCESSING);
+        });
         orderHistoryRepository.saveAll(pendingOrders);
         return pendingOrders.size();
     }

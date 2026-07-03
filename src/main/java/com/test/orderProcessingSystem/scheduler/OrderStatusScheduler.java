@@ -17,9 +17,18 @@ public class OrderStatusScheduler {
 
     @Scheduled(fixedRate = FIVE_MINUTES_MS)
     public void movePendingOrdersToProcessing() {
-        int updatedCount = adminOrderService.movePendingOrdersToProcessing();
-        if (updatedCount > 0) {
-            log.info("Moved {} order(s) from PENDING to PROCESSING", updatedCount);
+        long startTime = System.currentTimeMillis();
+        log.debug("Order status scheduler started");
+        try {
+            int updatedCount = adminOrderService.movePendingOrdersToProcessing();
+            long durationMs = System.currentTimeMillis() - startTime;
+            if (updatedCount > 0) {
+                log.info("Order status scheduler completed updated={} durationMs={}", updatedCount, durationMs);
+            } else {
+                log.debug("Order status scheduler completed updated=0 durationMs={}", durationMs);
+            }
+        } catch (Exception ex) {
+            log.error("Scheduler execution failed", ex);
         }
     }
 }

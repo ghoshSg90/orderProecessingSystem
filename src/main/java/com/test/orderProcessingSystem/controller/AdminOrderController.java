@@ -5,9 +5,11 @@ import com.test.orderProcessingSystem.dto.AdminOrderSummaryResponse;
 import com.test.orderProcessingSystem.dto.OrderDetailLineResponse;
 import com.test.orderProcessingSystem.dto.UpdateOrderStatusRequest;
 import com.test.orderProcessingSystem.entity.enums.OrderStatus;
+import com.test.orderProcessingSystem.security.SecurityUtils;
 import com.test.orderProcessingSystem.service.AdminOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/admin/orders")
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class AdminOrderController {
     public ResponseEntity<PagedModel<AdminOrderSummaryResponse>> listAllOrders(
             @RequestParam(required = false) OrderStatus status,
             @PageableDefault(size = 10) Pageable pageable) {
+        log.info("Admin accessed order list adminId={}", SecurityUtils.getCurrentUserId());
         return ResponseEntity.ok(new PagedModel<>(adminOrderService.listAllOrders(status, pageable)));
     }
 

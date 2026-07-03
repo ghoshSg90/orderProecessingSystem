@@ -11,12 +11,14 @@ import com.test.orderProcessingSystem.repository.AddressRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
 import com.test.orderProcessingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -45,6 +47,7 @@ public class UserService {
 
         // Addresses are removed automatically via the ON DELETE CASCADE foreign key
         userRepository.deleteById(userId);
+        log.info("User account deleted userId={}", userId);
     }
 
     @Transactional
@@ -62,6 +65,7 @@ public class UserService {
         address.setAddressType(request.getAddressType());
 
         Address saved = addressRepository.save(address);
+        log.info("Address updated addressId={} userId={}", addressId, userId);
         return toAddressResponse(saved);
     }
 

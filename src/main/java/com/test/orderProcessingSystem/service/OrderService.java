@@ -22,6 +22,7 @@ import com.test.orderProcessingSystem.repository.ProductDetailsRepository;
 import com.test.orderProcessingSystem.repository.ProductInventoryRepository;
 import com.test.orderProcessingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -44,6 +46,7 @@ public class OrderService {
 
     @Transactional
     public OrderDetailResponse createOrder(Long userId, CreateOrderRequest request) {
+        log.info("Creating new order userId={} items={}", userId, request.getItems().size());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -94,11 +97,15 @@ public class OrderService {
         orderHistory.setOrderDetails(orderDetailsList);
 
         OrderHistory savedOrder = orderHistoryRepository.save(orderHistory);
+        log.info("Order created successfully orderId={} userId={} amount={} status={}",
+                savedOrder.getOrderId(), userId, savedOrder.getTotalAmount(), savedOrder.getOrderStatus());
         return toOrderDetailResponse(savedOrder);
     }
 
     @Transactional(readOnly = true)
     public Page<OrderSummaryResponse> listOrdersForUser(Long userId, Pageable pageable) {
+        log.debug("Fetching orders userId={} page={} size={}",
+                userId, pageable.getPageNumber(), pageable.getPageSize());
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
@@ -109,6 +116,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderForUser(Long userId, Long orderId) {
+        log.debug("Fetching order orderId={} userId={}", orderId, userId);
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
@@ -122,6 +130,8 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderItemResponse> getOrderItemsForUser(Long userId, Long orderId, Pageable pageable) {
+        log.debug("Fetching order items orderId={} userId={} page={} size={}",
+                orderId, userId, pageable.getPageNumber(), pageable.getPageSize());
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
@@ -137,6 +147,7 @@ public class OrderService {
 
     @Transactional
     public OrderDetailResponse cancelOrder(Long userId, Long orderId) {
+        log.info("Cancel request received orderId={} userId={}", orderId, userId);
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
@@ -162,6 +173,7 @@ public class OrderService {
 
         orderHistory.setOrderStatus(OrderStatus.CANCELLED);
         OrderHistory savedOrder = orderHistoryRepository.save(orderHistory);
+        log.info("Order cancelled orderId={}", orderId);
         return toOrderDetailResponse(savedOrder);
     }
 
