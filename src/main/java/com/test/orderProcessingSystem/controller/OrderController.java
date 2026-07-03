@@ -2,11 +2,15 @@ package com.test.orderProcessingSystem.controller;
 
 import com.test.orderProcessingSystem.dto.CreateOrderRequest;
 import com.test.orderProcessingSystem.dto.OrderDetailResponse;
+import com.test.orderProcessingSystem.dto.OrderItemResponse;
 import com.test.orderProcessingSystem.dto.OrderSummaryResponse;
 import com.test.orderProcessingSystem.security.SecurityUtils;
 import com.test.orderProcessingSystem.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,8 +21,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/v1/users/")
@@ -36,9 +38,11 @@ public class OrderController {
     }
 
     @GetMapping("/{userId}/orders")
-    public ResponseEntity<List<OrderSummaryResponse>> listOrders(@PathVariable Long userId) {
+    public ResponseEntity<PagedModel<OrderSummaryResponse>> listOrders(
+            @PathVariable Long userId,
+            @PageableDefault(size = 10) Pageable pageable) {
         requireSelf(userId);
-        return ResponseEntity.ok(orderService.listOrdersForUser(userId));
+        return ResponseEntity.ok(new PagedModel<>(orderService.listOrdersForUser(userId, pageable)));
     }
 
     @GetMapping("/{userId}/orders/{orderId}")
@@ -47,6 +51,15 @@ public class OrderController {
             @PathVariable Long orderId) {
         requireSelf(userId);
         return ResponseEntity.ok(orderService.getOrderForUser(userId, orderId));
+    }
+
+    @GetMapping("/{userId}/orders/{orderId}/items")
+    public ResponseEntity<PagedModel<OrderItemResponse>> getOrderItems(
+            @PathVariable Long userId,
+            @PathVariable Long orderId,
+            @PageableDefault(size = 10) Pageable pageable) {
+        requireSelf(userId);
+        return ResponseEntity.ok(new PagedModel<>(orderService.getOrderItemsForUser(userId, orderId, pageable)));
     }
 
     @PutMapping("/{userId}/orders/{orderId}/cancel")

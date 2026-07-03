@@ -16,11 +16,14 @@ import com.test.orderProcessingSystem.entity.enums.OrderStatus;
 import com.test.orderProcessingSystem.exception.BadRequestException;
 import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.AddressRepository;
+import com.test.orderProcessingSystem.repository.OrderDetailsRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
 import com.test.orderProcessingSystem.repository.ProductDetailsRepository;
 import com.test.orderProcessingSystem.repository.ProductInventoryRepository;
 import com.test.orderProcessingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,7 @@ import java.util.List;
 public class OrderService {
 
     private final OrderHistoryRepository orderHistoryRepository;
+    private final OrderDetailsRepository orderDetailsRepository;
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
     private final ProductDetailsRepository productDetailsRepository;
@@ -94,14 +98,13 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderSummaryResponse> listOrdersForUser(Long userId) {
+    public Page<OrderSummaryResponse> listOrdersForUser(Long userId, Pageable pageable) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
 
-        return orderHistoryRepository.findByUser_UserId(userId).stream()
-                .map(this::toOrderSummaryResponse)
-                .toList();
+        return orderHistoryRepository.findByUser_UserId(userId, pageable)
+                .map(this::toOrderSummaryResponse);
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +118,21 @@ public class OrderService {
                         "Order not found with id: " + orderId + " for user: " + userId));
 
         return toOrderDetailResponse(orderHistory);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderItemResponse> getOrderItemsForUser(Long userId, Long orderId, Pageable pageable) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
+
+        // Ensure the order exists and belongs to this user before returning its line items
+        orderHistoryRepository.findByOrderIdAndUser_UserId(orderId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with id: " + orderId + " for user: " + userId));
+
+        return orderDetailsRepository.findByOrderHistory_OrderId(orderId, pageable)
+                .map(this::toOrderItemResponse);
     }
 
     @Transactional
@@ -156,14 +174,18 @@ public class OrderService {
                 .updatedAt(orderHistory.getUpdatedAt())
                 .shippingAddress(toAddressResponse(orderHistory.getShippingAddress()))
                 .items(orderHistory.getOrderDetails().stream()
-                        .map(item -> OrderItemResponse.builder()
-                                .productId(item.getProductDetails().getProductId())
-                                .productName(item.getProductDetails().getName())
-                                .quantity(item.getQuantity())
-                                .priceAtPurchase(item.getPriceAtPurchase())
-                                .subtotal(item.getSubtotal())
-                                .build())
+                        .map(this::toOrderItemResponse)
                         .toList())
+                .build();
+    }
+
+    private OrderItemResponse toOrderItemResponse(OrderDetails item) {
+        return OrderItemResponse.builder()
+                .productId(item.getProductDetails().getProductId())
+                .productName(item.getProductDetails().getName())
+                .quantity(item.getQuantity())
+                .priceAtPurchase(item.getPriceAtPurchase())
+                .subtotal(item.getSubtotal())
                 .build();
     }
 

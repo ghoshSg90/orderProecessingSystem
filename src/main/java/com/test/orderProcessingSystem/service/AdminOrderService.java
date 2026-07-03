@@ -14,6 +14,8 @@ import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.OrderDetailsRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +29,12 @@ public class AdminOrderService {
     private final OrderDetailsRepository orderDetailsRepository;
 
     @Transactional(readOnly = true)
-    public List<AdminOrderSummaryResponse> listAllOrders(OrderStatus statusFilter) {
-        List<OrderHistory> orders = statusFilter == null
-                ? orderHistoryRepository.findAll()
-                : orderHistoryRepository.findByOrderStatus(statusFilter);
+    public Page<AdminOrderSummaryResponse> listAllOrders(OrderStatus statusFilter, Pageable pageable) {
+        Page<OrderHistory> orders = statusFilter == null
+                ? orderHistoryRepository.findAll(pageable)
+                : orderHistoryRepository.findByOrderStatus(statusFilter, pageable);
 
-        return orders.stream()
-                .map(this::toAdminOrderSummaryResponse)
-                .toList();
+        return orders.map(this::toAdminOrderSummaryResponse);
     }
 
     @Transactional(readOnly = true)
