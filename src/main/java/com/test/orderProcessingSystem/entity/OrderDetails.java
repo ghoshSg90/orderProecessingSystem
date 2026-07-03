@@ -26,7 +26,7 @@ public class OrderDetails {
     // Purchased Product
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    private ProductInventory productInventory;
+    private ProductDetails productDetails;
 
     @Column(nullable = false)
     private Integer quantity;

@@ -15,3 +15,13 @@ spring:
       #ddl-auto: update
       ddl-auto: create
     show-sql: true
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+app:
+  jwt:
+    secret: 8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM=
+    expiration-ms: 3600000

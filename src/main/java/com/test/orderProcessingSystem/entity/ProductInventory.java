@@ -1,6 +1,5 @@
 package com.test.orderProcessingSystem.entity;
 
-import com.test.orderProcessingSystem.entity.enums.ProductCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,23 +12,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProductInventory {
     @Id
-    @Column(name = "product_id", updatable = false)
+    @Column(name = "inventory_id", updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long productId;
+    private Long inventoryId;
 
-    @Column(name ="name", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "product_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_product_inventory_product_details")
+    )
+    private ProductDetails productDetails;
+
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name ="description", nullable = false)
-    private String description;
-
-    @Column(name = "price_per_unit", nullable = false)
-    private Double pricePerUnit;
-
-    @Column(name = "available_unit", nullable = false)
-    private Integer availableUnit;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ProductCategory productCategory;
+    @Column(name = "total_available_units", nullable = false)
+    private Integer totalAvailableUnits;
 }
