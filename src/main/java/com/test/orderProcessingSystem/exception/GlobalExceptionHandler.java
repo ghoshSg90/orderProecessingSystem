@@ -9,8 +9,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,18 @@ public class GlobalExceptionHandler {
         // WARN: validation failure
         log.warn("Validation failed: {}", details);
         return build(HttpStatus.BAD_REQUEST, "Validation failed: " + details);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        // WARN: bad query/path parameter (client input) — return a helpful 400, not a 500
+        String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'";
+        Class<?> requiredType = ex.getRequiredType();
+        if (requiredType != null && requiredType.isEnum()) {
+            message += ". Allowed values: " + Arrays.toString(requiredType.getEnumConstants());
+        }
+        log.warn("Type mismatch: {}", message);
+        return build(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(AuthenticationException.class)
