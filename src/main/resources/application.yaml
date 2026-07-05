@@ -27,6 +27,10 @@ spring:
     defer-datasource-initialization: true
     # Responses are mapped to DTOs inside @Transactional service methods, so OSIV is not needed
     open-in-view: false
+    properties:
+      hibernate:
+        # Batch lazy loads into IN (…) queries, collapsing N+1 into N/size lookups across the app.
+        default_batch_fetch_size: 32
 
   sql:
     init:

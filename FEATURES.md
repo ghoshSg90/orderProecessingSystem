@@ -87,6 +87,10 @@ for how to run it and **[LOGGING.md](LOGGING.md)** for the logging convention.
 - Terminal-status guard on account deletion; order-reference guard on address deletion; stock guards
   on order creation/cancel.
 - Six foreign keys with deliberate cascade / no-action design.
+- **N+1 mitigation** — all associations `LAZY`, plus a global Hibernate `default_batch_fetch_size`
+  (batches lazy loads into `IN (…)` queries) and targeted `@EntityGraph` fetch plans on the order
+  **list** (fetch `user`), **detail** (fetch `user`/`shippingAddress`/items/products), and paginated
+  **item** finders.
 
 ## 14. Error handling
 - Central `GlobalExceptionHandler`: 404 / 400 / 400-validation /
