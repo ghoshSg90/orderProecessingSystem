@@ -1,0 +1,6 @@
+apiVersion: v2
+name: orderprocessingsystem
+description: Order Processing System - Spring Boot backend with bundled PostgreSQL
+type: application
+version: 0.1.0
+appVersion: "26.03.00.00"

@@ -10,6 +10,7 @@ import com.test.orderProcessingSystem.entity.Address;
 import com.test.orderProcessingSystem.entity.OrderDetails;
 import com.test.orderProcessingSystem.entity.OrderHistory;
 import com.test.orderProcessingSystem.entity.enums.OrderStatus;
+import com.test.orderProcessingSystem.exception.BadRequestException;
 import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.OrderDetailsRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
@@ -20,7 +21,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -29,6 +33,20 @@ public class AdminOrderService {
 
     private final OrderHistoryRepository orderHistoryRepository;
     private final OrderDetailsRepository orderDetailsRepository;
+
+    // Allowed manual (admin) status transitions. A status mapped to an empty set is terminal.
+    //   PENDING    -> PROCESSING, CANCELLED
+    //   PROCESSING -> SHIPPED (only)
+    //   SHIPPED    -> DELIVERED, PROCESSING (the latter to correct a premature shipment)
+    //   DELIVERED  -> (terminal)
+    //   CANCELLED  -> (terminal)
+    private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
+            OrderStatus.PENDING, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED),
+            OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPED),
+            OrderStatus.SHIPPED, EnumSet.of(OrderStatus.DELIVERED, OrderStatus.PROCESSING),
+            OrderStatus.DELIVERED, EnumSet.noneOf(OrderStatus.class),
+            OrderStatus.CANCELLED, EnumSet.noneOf(OrderStatus.class)
+    );
 
     @Transactional(readOnly = true)
     public Page<AdminOrderSummaryResponse> listAllOrders(OrderStatus statusFilter, Pageable pageable) {
@@ -67,11 +85,43 @@ public class AdminOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         OrderStatus oldStatus = orderHistory.getOrderStatus();
-        orderHistory.setOrderStatus(request.getOrderStatus());
+        OrderStatus newStatus = request.getOrderStatus();
+
+        validateTransition(orderId, oldStatus, newStatus);
+
+        orderHistory.setOrderStatus(newStatus);
         OrderHistory savedOrder = orderHistoryRepository.save(orderHistory);
         log.info("Order status updated orderId={} old={} new={}",
                 orderId, oldStatus, savedOrder.getOrderStatus());
         return toAdminOrderDetailResponse(savedOrder);
+    }
+
+    /**
+     * Validates a manual (admin) status change against {@link #ALLOWED_TRANSITIONS}, throwing a 400
+     * with a state-specific message when the transition is not permitted. Setting a status to itself
+     * is treated as a no-op and allowed.
+     */
+    private void validateTransition(Long orderId, OrderStatus from, OrderStatus to) {
+        if (from == to) {
+            return;
+        }
+        if (ALLOWED_TRANSITIONS.getOrDefault(from, EnumSet.noneOf(OrderStatus.class)).contains(to)) {
+            return;
+        }
+        // Not allowed — surface the most helpful message for the current state.
+        if (from == OrderStatus.DELIVERED) {
+            throw new BadRequestException(
+                    "Order " + orderId + " is already delivered and cannot be moved to another state");
+        }
+        if (from == OrderStatus.CANCELLED) {
+            throw new BadRequestException(
+                    "Order " + orderId + " is cancelled and cannot be moved to another state");
+        }
+        if (from == OrderStatus.PROCESSING && to == OrderStatus.DELIVERED) {
+            throw new BadRequestException("Order " + orderId + " can only be moved to shipped");
+        }
+        throw new BadRequestException(
+                "Order " + orderId + " cannot be moved from " + from + " to " + to);
     }
 
     @Transactional
@@ -110,6 +160,7 @@ public class AdminOrderService {
                 .shippingAddress(toAddressResponse(orderHistory.getShippingAddress()))
                 .items(orderHistory.getOrderDetails().stream()
                         .map(item -> OrderItemResponse.builder()
+                                .orderDetailsId(item.getOrderDetailsId())
                                 .productId(item.getProductDetails().getProductId())
                                 .productName(item.getProductDetails().getName())
                                 .quantity(item.getQuantity())

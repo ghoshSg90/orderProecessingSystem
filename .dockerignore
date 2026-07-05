@@ -1,0 +1,19 @@
+# Build output
+target/
+
+# VCS / IDE
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+
+# Windows "mark-of-the-web" cruft (NTFS alternate data streams)
+**/*Zone.Identifier
+
+# Docs & deploy artifacts not needed in the image build context
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yaml
+helm/

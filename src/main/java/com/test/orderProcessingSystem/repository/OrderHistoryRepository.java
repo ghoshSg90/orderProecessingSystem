@@ -15,9 +15,13 @@ public interface OrderHistoryRepository extends JpaRepository<OrderHistory, Long
 
     Page<OrderHistory> findByUser_UserId(Long userId, Pageable pageable);
 
+    List<OrderHistory> findByUser_UserId(Long userId);
+
     List<OrderHistory> findByOrderStatus(OrderStatus orderStatus);
 
     Page<OrderHistory> findByOrderStatus(OrderStatus orderStatus, Pageable pageable);
 
     boolean existsByUser_UserIdAndOrderStatusNotIn(Long userId, Collection<OrderStatus> statuses);
+
+    boolean existsByShippingAddress_AddressId(Long addressId);
 }

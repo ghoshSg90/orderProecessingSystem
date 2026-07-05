@@ -42,12 +42,11 @@ public class Address {
     @Column(nullable = false)
     private AddressType addressType;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "user_id",
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_address_user")
     )
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }

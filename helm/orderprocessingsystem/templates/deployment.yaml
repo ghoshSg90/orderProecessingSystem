@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ops.fullname" . }}
+  labels:
+    {{- include "ops.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ops.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ops.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.app.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "ops.fullname" . }}-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ops.fullname" . }}-secret
+                  key: jwt-secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ops.fullname" . }}-secret
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ops.fullname" . }}-secret
+                  key: db-password
+          # Startup gates liveness/readiness: they only begin once startup succeeds.
+          startupProbe:
+            httpGet:
+              path: {{ .Values.app.contextPath }}/v1/healthCheck/startup
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30        # allow up to ~5 min to start (DB + cache ready)
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.app.contextPath }}/v1/healthCheck/liveliness
+              port: http
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.app.contextPath }}/v1/healthCheck/readiness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

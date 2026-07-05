@@ -1,0 +1,28 @@
+# Container profile (self-contained demo). Activated with SPRING_PROFILES_ACTIVE=docker.
+# Every value has a sensible default but is overridable via environment variables, so the same
+# image can be used for local docker-compose and for Helm (where secrets are injected).
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/orderprocessingsystem_db}
+    username: ${DB_USERNAME:orderuser}
+    password: ${DB_PASSWORD:orderpass}
+  jpa:
+    hibernate:
+      # Demo: rebuild the schema on startup
+      ddl-auto: create
+  sql:
+    init:
+      # Demo: load seed users/products from data.sql
+      mode: always
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM=}
+
+logging:
+  level:
+    root: INFO
+    com.test.orderProcessingSystem: INFO
+    # Never log SQL / bind parameters in a shared/container environment
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

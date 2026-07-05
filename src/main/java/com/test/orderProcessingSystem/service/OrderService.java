@@ -193,6 +193,7 @@ public class OrderService {
 
     private OrderItemResponse toOrderItemResponse(OrderDetails item) {
         return OrderItemResponse.builder()
+                .orderDetailsId(item.getOrderDetailsId())
                 .productId(item.getProductDetails().getProductId())
                 .productName(item.getProductDetails().getName())
                 .quantity(item.getQuantity())

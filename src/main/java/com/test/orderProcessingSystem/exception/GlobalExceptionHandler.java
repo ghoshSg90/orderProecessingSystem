@@ -2,6 +2,7 @@ package com.test.orderProcessingSystem.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -53,6 +54,15 @@ public class GlobalExceptionHandler {
             message += ". Allowed values: " + Arrays.toString(requiredType.getEnumConstants());
         }
         log.warn("Type mismatch: {}", message);
+        return build(HttpStatus.BAD_REQUEST, message);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidSort(PropertyReferenceException ex) {
+        // WARN: client asked to sort/filter by a property that does not exist on the entity — 400, not 500
+        String message = "Invalid sort property '" + ex.getPropertyName()
+                + "' for " + ex.getType().getType().getSimpleName();
+        log.warn("Invalid property reference: {}", message);
         return build(HttpStatus.BAD_REQUEST, message);
     }
 

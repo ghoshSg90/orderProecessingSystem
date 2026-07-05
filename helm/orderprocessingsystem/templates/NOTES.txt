@@ -1,0 +1,17 @@
+{{ .Chart.Name }} has been deployed.
+
+App:      {{ include "ops.fullname" . }}  (context path: {{ .Values.app.contextPath }})
+{{- if .Values.postgres.enabled }}
+Database: {{ include "ops.postgres.fullname" . }}  (bundled PostgreSQL)
+{{- else }}
+Database: external — ensure SPRING_DATASOURCE_URL points at your DB (--set or extra env).
+{{- end }}
+
+Reach the app locally:
+  kubectl port-forward svc/{{ include "ops.fullname" . }} 8080:{{ .Values.service.port }}
+
+Then open:
+  Swagger UI: http://localhost:8080{{ .Values.app.contextPath }}/swagger-ui/index.html
+  Health:     http://localhost:8080{{ .Values.app.contextPath }}/actuator/health
+
+Seed logins (all password: password123$): supp_admin, sghosh, sghosh2

@@ -11,6 +11,7 @@ import com.test.orderProcessingSystem.entity.ProductDetails;
 import com.test.orderProcessingSystem.entity.User;
 import com.test.orderProcessingSystem.entity.enums.AddressType;
 import com.test.orderProcessingSystem.entity.enums.OrderStatus;
+import com.test.orderProcessingSystem.exception.BadRequestException;
 import com.test.orderProcessingSystem.exception.ResourceNotFoundException;
 import com.test.orderProcessingSystem.repository.OrderDetailsRepository;
 import com.test.orderProcessingSystem.repository.OrderHistoryRepository;
@@ -210,6 +211,92 @@ class AdminOrderServiceTest {
                 adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.SHIPPED)))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Order not found");
+
+        verify(orderHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    // ---------- updateOrderStatus: transition rules ----------
+
+    @Test
+    void updateOrderStatus_shippedToDelivered_allowed() {
+        OrderHistory order = orderWithStatus(OrderStatus.SHIPPED);
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderHistoryRepository.save(order)).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminOrderDetailResponse response =
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.DELIVERED));
+
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.DELIVERED);
+    }
+
+    @Test
+    void updateOrderStatus_shippedToProcessing_allowed() {
+        OrderHistory order = orderWithStatus(OrderStatus.SHIPPED);
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderHistoryRepository.save(order)).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminOrderDetailResponse response =
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.PROCESSING));
+
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PROCESSING);
+    }
+
+    @Test
+    void updateOrderStatus_pendingToCancelled_allowed() {
+        OrderHistory order = orderWithStatus(OrderStatus.PENDING);
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(orderHistoryRepository.save(order)).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminOrderDetailResponse response =
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    void updateOrderStatus_processingToDelivered_rejectedWithShippedMessage() {
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(orderWithStatus(OrderStatus.PROCESSING)));
+
+        assertThatThrownBy(() ->
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.DELIVERED)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("can only be moved to shipped");
+
+        verify(orderHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void updateOrderStatus_deliveredIsTerminal_rejected() {
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(orderWithStatus(OrderStatus.DELIVERED)));
+
+        assertThatThrownBy(() ->
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.SHIPPED)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("already delivered");
+
+        verify(orderHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void updateOrderStatus_cancelledIsTerminal_rejected() {
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(orderWithStatus(OrderStatus.CANCELLED)));
+
+        assertThatThrownBy(() ->
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.PROCESSING)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("is cancelled");
+
+        verify(orderHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void updateOrderStatus_pendingToShipped_rejectedAsIllegalSkip() {
+        when(orderHistoryRepository.findById(ORDER_ID)).thenReturn(Optional.of(orderWithStatus(OrderStatus.PENDING)));
+
+        assertThatThrownBy(() ->
+                adminOrderService.updateOrderStatus(ORDER_ID, new UpdateOrderStatusRequest(OrderStatus.SHIPPED)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("cannot be moved from PENDING to SHIPPED");
 
         verify(orderHistoryRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }

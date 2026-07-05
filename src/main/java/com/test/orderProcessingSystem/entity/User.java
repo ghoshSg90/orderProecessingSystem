@@ -7,6 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "USER_INFO")
 @Data
@@ -24,10 +27,10 @@ public class User {
     @Column(name ="name", nullable = false)
     private String name;
 
-    @Column(name ="email", nullable = false, length = 60, unique = true)
+    @Column(name = "email", nullable = false, length = 60, unique = true)
     private String email;
 
-    @Column(name ="mobile_number", nullable = false, length = 15, unique = true)
+    @Column(name = "mobile_number", nullable = false, length = 15, unique = true)
     private String mobileNumber;
 
     @Column(nullable = false, length = 60) // BCrypt hashes require around 60 characters
@@ -38,6 +41,17 @@ public class User {
     @Column(nullable = false)
     private UserRoleCategory userRoleCategory;
 
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Address> addresses = new ArrayList<>();
 
-
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<OrderHistory> orders = new ArrayList<>();
 }

@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: your-registry/orderprocessingsystem   # <-- set your registry path
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+app:
+  # Must match the app's server.servlet.context-path
+  contextPath: /orderProcessingSystem
+  # Spring profile the container runs with
+  profile: docker
+  port: 8080
+
+# App secret. Override in real environments (helm install --set jwt.secret=...) or use an
+# externally-managed secret.
+jwt:
+  secret: "8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM="
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: orderprocessingsystem.local
+
+# Bundled PostgreSQL. Set enabled=false to use an external DB (then override the datasource URL,
+# e.g. --set-string 'extraEnv.SPRING_DATASOURCE_URL=jdbc:postgresql://host:5432/db').
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  database: orderprocessingsystem_db
+  username: orderuser
+  password: orderpass
+  port: 5432
+  storage: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "500m"
+      memory: 512Mi

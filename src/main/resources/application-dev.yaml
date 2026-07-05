@@ -1,0 +1,20 @@
+# Development profile (active by default).
+# Contains throwaway local secrets for convenience; in a real repo this file would be
+# git-ignored and provided per-developer.
+spring:
+  datasource:
+    username: adminosp
+    password: password123$
+
+app:
+  jwt:
+    secret: 8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM=
+
+logging:
+  level:
+    root: INFO
+    # Verbose app logging in dev (TRACE reaches the file, which uses an all-levels threshold)
+    com.test.orderProcessingSystem: TRACE
+    # SQL + bind values (dev only — bind values can contain PII, never enable in qa/prod)
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

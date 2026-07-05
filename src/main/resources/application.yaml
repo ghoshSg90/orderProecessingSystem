@@ -1,14 +1,23 @@
+server:
+  servlet:
+    context-path: /orderProcessingSystem
+application:
+  name: @project.name@
+  version: @project.version@
 spring:
   main:
     banner-mode: "off"
   application:
     name: orderProcessingSystem
 
+  # Default profile for local development. Override at launch, e.g. -Dspring-boot.run.profiles=prod
+  profiles:
+    active: dev
+
   datasource:
     url: jdbc:postgresql://localhost:5432/orderprocessingsystem_db
-    username: adminosp
-    password: password123$
     driver-class-name: org.postgresql.Driver
+    # username/password are profile-specific (see application-dev.yaml / application-qa.yaml / application-prod.yaml)
 
   jpa:
     hibernate:
@@ -16,6 +25,8 @@ spring:
       ddl-auto: create
     #show-sql: true
     defer-datasource-initialization: true
+    # Responses are mapped to DTOs inside @Transactional service methods, so OSIV is not needed
+    open-in-view: false
 
   sql:
     init:
@@ -23,16 +34,22 @@ spring:
 
 app:
   jwt:
-    secret: 8Tm0lx6P1dSctoLxxlQ4ZSCwS+UByOdSItcQPd6V1CM=
+    # secret is profile-specific (see application-dev.yaml; injected via env in prod)
     expiration-ms: 3600000
+  # REQUIRED to enable file logging. Set this to a writable directory, e.g. ${user.home}/log.
+  # If left blank, the app logs a warning at startup and writes to console only (it still runs).
+  # File name: <env>_<applicationName>_<startTimestamp>.log  (env from active profile).
+  log:
+    path:
+
+springdoc:
+  swagger-ui:
+    # Remember the Authorize (bearer token) value across page reloads in the browser session
+    persist-authorization: true
 
 logging:
-  level:
-    root: INFO
-    # Application logs at DEBUG in dev; set to TRACE to see method entry/exit
-    com.test.orderProcessingSystem: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+  # Per-environment log levels live in application-<profile>.yaml. The file appender applies its own
+  # per-environment threshold (dev=all, qa=info+, prod=warn+) while the console stays verbose.
   pattern:
     # [%X{requestId}] surfaces the per-request correlation id on every line
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{requestId}] %logger{36} - %msg%n"

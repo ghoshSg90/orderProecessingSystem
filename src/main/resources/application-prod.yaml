@@ -1,0 +1,28 @@
+# Production profile. Activate with -Dspring-boot.run.profiles=prod (or SPRING_PROFILES_ACTIVE=prod).
+# All secrets come from environment variables — nothing sensitive is committed.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/orderprocessingsystem_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      # Never recreate or drop the production schema — only validate it matches the entities
+      ddl-auto: validate
+  sql:
+    init:
+      # Do not run data.sql (seed data) in production
+      mode: never
+
+app:
+  jwt:
+    # Secret must be provided via env; token lifetime (expiration-ms) is inherited from application.yaml
+    secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: INFO
+    com.test.orderProcessingSystem: INFO
+    # SQL / bind-parameter logging must stay off in production (bind values can contain PII)
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
