@@ -124,14 +124,14 @@ Every endpoint except `/v1/auth/**` requires a **JWT**. The flow is:
 
    As a **customer** (`sghosh`):
    ```bash
-   curl -s -X POST http://localhost:8080/v1/auth/login \
+   curl -s -X POST http://localhost:8080/orderProcessingSystem/v1/auth/login \
      -H "Content-Type: application/json" \
      -d '{"userName":"sghosh","password":"password123$"}'
    ```
 
    As the **support admin** (`supp_admin`) — needed for the admin routes under `/v1/admin/**`:
    ```bash
-   curl -s -X POST http://localhost:8080/v1/auth/login \
+   curl -s -X POST http://localhost:8080/orderProcessingSystem/v1/auth/login \
      -H "Content-Type: application/json" \
      -d '{"userName":"supp_admin","password":"password123$"}'
    ```
@@ -156,7 +156,7 @@ Rules:
 New customers can self-register (always created as `CUSTOMER`):
 
 ```bash
-curl -X POST http://localhost:8080/v1/auth/register \
+curl -X POST http://localhost:8080/orderProcessingSystem/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"userName":"jdoe","name":"John Doe","email":"jdoe@mail.com","mobileNumber":"9000000001","password":"MyPass@123"}'
 ```
@@ -200,20 +200,20 @@ from the `OrderStatus` / `ProductCategory` enums; an invalid value returns `400`
 
 ```bash
 # 1. login
-TOKEN=$(curl -s -X POST http://localhost:8080/v1/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8080/orderProcessingSystem/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"userName":"sghosh","password":"password123$"}' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
 # 2. create an order (shipping to address 1, two products)
-curl -s -X POST http://localhost:8080/v1/users/2/orders \
+curl -s -X POST http://localhost:8080/orderProcessingSystem/v1/users/2/orders \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"shippingAddressId":1,"items":[{"productId":1,"quantity":2},{"productId":11,"quantity":1}]}'
 
 # 3. list own orders
-curl -s http://localhost:8080/v1/users/2/orders -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8080/orderProcessingSystem/v1/users/2/orders -H "Authorization: Bearer $TOKEN"
 
 # 4. cancel order 1 (only works while still PENDING)
-curl -s -X PUT http://localhost:8080/v1/users/2/orders/1/cancel -H "Authorization: Bearer $TOKEN"
+curl -s -X PUT http://localhost:8080/orderProcessingSystem/v1/users/2/orders/1/cancel -H "Authorization: Bearer $TOKEN"
 ```
 
 > **Demo tip:** a background job flips `PENDING` orders to `PROCESSING` every 5 minutes, which also
